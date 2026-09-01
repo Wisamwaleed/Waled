@@ -3,9 +3,10 @@ import subprocess
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
+import memory_manager
 
 def web_search(query: str) -> str:
-    """Search the web for real-time information or general knowledge."""
+    """البحث في الإنترنت عن معلومات حية."""
     try:
         encoded = urllib.parse.quote(query)
         url = f"https://html.duckduckgo.com/html/?q={encoded}"
@@ -28,7 +29,7 @@ def web_search(query: str) -> str:
         return f"خطأ في البحث: {e}"
 
 def run_python_code(code: str) -> str:
-    """Execute Python code locally and return the output or errors for self-correction."""
+    """تنفيذ كود بايثون محلياً وإرجاع النتيجة."""
     try:
         filename = "temp_exec.py"
         with open(filename, "w", encoding="utf-8") as f:
@@ -39,22 +40,10 @@ def run_python_code(code: str) -> str:
     except Exception as e:
         return f"خطأ أثناء التنفيذ: {e}"
 
-def save_memory(memory_text: str) -> str:
-    """Save experiences, lessons, or notes into a persistent memory file."""
-    try:
-        os.makedirs("memory", exist_ok=True)
-        with open("memory/learned_lessons.txt", "a", encoding="utf-8") as f:
-            f.write(f"- {memory_text}\n")
-        return "تم حفظ المعلومة في الذاكرة بنجاح."
-    except Exception as e:
-        return f"خطأ في حفظ الذاكرة: {e}"
+def store_lesson(category: str, content: str) -> str:
+    """حفظ ملاحظة أو درس أو تفضيل في الذاكرة المستقرة للرجوع إليها لاحقاً."""
+    return memory_manager.save_memory(category, content)
 
-def read_memory() -> str:
-    """Read past memories and saved lessons to retrieve context."""
-    try:
-        if os.path.exists("memory/learned_lessons.txt"):
-            with open("memory/learned_lessons.txt", "r", encoding="utf-8") as f:
-                return f.read()
-        return "الذاكرة فارغة حالياً."
-    except Exception as e:
-        return f"خطأ في قراءة الذاكرة: {e}"
+def query_memory(query: str) -> str:
+    """البحث في الذاكرة المستقرة عن معلومات أو دروس محفوظة مسبقاً."""
+    return memory_manager.search_memory(query)

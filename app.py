@@ -13,21 +13,20 @@ if not api_key:
 
 st.set_page_config(page_title="Waled Autonomous Agent", page_icon="🤖")
 
-st.title("🤖 Waled Autonomous Agent")
-st.write("وكيل حقيقي يمتلك أدوات البحث، تنفيذ الأكواد، والذاكرة الذاتية.")
+st.title("🤖 Waled Autonomous Agent (مع الذاكرة المستقرة)")
+st.write("وكيل مزود بأدوات بحث، تشغيل كود، وذاكرة مستقرة تعتمد على قواعد البيانات.")
 
 if not api_key:
-    st.error("الرجاء إعداد مفتاح GEMINI_API_KEY في إعدادات المنصة السحابية.")
+    st.error("الرجاء إعداد مفتاح GEMINI_API_KEY في إعدادات المنصة.")
     st.stop()
 
 client = genai.Client(api_key=api_key)
 
-# قائمة الأدوات المتاحة للوكيل
 agent_tools = [
     tools.web_search,
     tools.run_python_code,
-    tools.save_memory,
-    tools.read_memory
+    tools.store_lesson,
+    tools.query_memory
 ]
 
 if "messages" not in st.session_state:
@@ -37,7 +36,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-prompt = st.chat_input("اطلب من الوكيل تنفيذ مهمة (مثلاً: ابحث عن... أو اكتب كود بايثون لاختبار...)")
+prompt = st.chat_input("اطرح طلباً أو اطلب منه حفظ معلومة في الذاكرة...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -45,7 +44,7 @@ if prompt:
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        message_placeholder.markdown("جاري تشغيل الوكيل وتجربة الأدوات...")
+        message_placeholder.markdown("جاري معالجة الطلب واستخدام الذاكرة أو الأدوات...")
 
         try:
             response = client.models.generate_content(
@@ -54,16 +53,16 @@ if prompt:
                 config=types.GenerateContentConfig(
                     tools=agent_tools,
                     system_instruction=(
-                        "أنت وكيل ذكي ومستقل (Autonomous Agent). "
-                        "لديك أدوات للبحث في الويب، تشغيل أكواد بايثون، وحفظ أو قراءة الذاكرة. "
-                        "استخدم هذه الأدوات عندما يطلب منك المستخدم مهام تتطلب ذلك."
+                        "أنت وكيل ذكي ومستقل (Autonomous Agent) تمتلك ذاكرة مستقرة، وأدوات بحث وتنفذ أكواد. "
+                        "عندما يطلب منك المستخدم حفظ معلومة، استخدم أداة store_lesson. "
+                        "وعندما يسأل عن معلومة قديمة، استخدم أداة query_memory."
                     )
                 )
             )
             
-            reply_text = response.text if response.text else "تم تنفيذ المهمة بنجاح عبر الأدوات."
+            reply_text = response.text if response.text else "تم تنفيذ العملية بنجاح."
             message_placeholder.markdown(reply_text)
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
             
         except Exception as e:
-            message_placeholder.markdown(f"حدث خطأ أثناء عمل الوكيل: {e}")
+            message_placeholder.markdown(f"حدث خطأ: {e}")
