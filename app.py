@@ -1,49 +1,24 @@
 import os
 import streamlit as st
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from groq import Groq
 import tools
 
+load_dotenv()
+
+gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+
 st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
 
 st.title("🤖 Waled Self-Evolving Developer Agent")
-st.write("وكيل مطور ذاتياً: يدعم أدوات التطوير، الذاكرة، وفحص الأخطاء.")
+st.write("وكيل مطور ذاتياً: يدعم أدوات التطوير، الذاكرة، وفحص الأخطاء مع التبديل بين Gemini و Groq.")
 
-# --- إدارة المفاتيح من الشريط الجانبي أو البيئة ---
 with st.sidebar:
-    st.header("🔑 إعدادات المفاتيح")
-    
-    # مفتاح جيميني
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_key:
-        try:
-            gemini_key = st.secrets["GEMINI_API_KEY"]
-        except Exception:
-            gemini_key = ""
-            
-    input_gemini = st.text_input("Gemini API Key", value=gemini_key, type="password")
-    
-    # مفتاح Groq الجديد
-    groq_key = os.environ.get("GROQ_API_KEY")
-    if not groq_key:
-        try:
-            groq_key = st.secrets["GROQ_API_KEY"]
-        except Exception:
-            groq_key = ""
-            
-    input_groq = st.text_input("Groq API Key (اختياري للسرعة)", value=groq_key, type="password")
-    
-    # اختيار النموذج الأساسي
-    provider = st.radio("اختر المزود (Provider):", ["Gemini (Google)", "Groq (Llama 3)"])
-
-# التحقق من توفر المفتاح المختار
-if provider == "Gemini (Google)" and not input_gemini:
-    st.error("الرجاء إدخال مفتاح Gemini API Key للبدء.")
-    st.stop()
-elif provider == "Groq (Llama 3)" and not input_groq:
-    st.error("الرجاء إدخال مفتاح Groq API Key للبدء.")
-    st.stop()
+    st.header("🔑 إعدادات المزود")
+    provider = st.radio("اختر نموذج الذكاء الاصطناعي:", ["Groq (Llama 3)", "Gemini (Google)"])
 
 agent_tools = [
     tools.web_search,
@@ -75,7 +50,7 @@ if prompt:
 
         try:
             if provider == "Gemini (Google)":
-                client = genai.Client(api_key=input_gemini)
+                client = genai.Client(api_key=gemini_key)
                 response = client.models.generate_content(
                     model='gemini-3.6-flash',
                     contents=prompt,
@@ -94,10 +69,9 @@ if prompt:
                 reply_text = response.text if response.text else "تم تنفيذ مهام التطوير بنجاح."
                 
             else:
-                # تشغيل نموذج Groq فائق السرعة
-                client = Groq(api_key=input_groq)
+                client = Groq(api_key=groq_key)
                 completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile", # نموذج قوي وسريع يدعم المهام المعقدة
+                    model="llama-3.3-70b-versatile",
                     messages=[
                         {
                             "role": "system",
