@@ -3,16 +3,18 @@ import streamlit as st
 from google import genai
 from google.genai import types
 from groq import Groq
+from openai import OpenAI
 import tools
 
 st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
 
 st.title("🤖 Waled Self-Evolving Developer Agent")
-st.write("وكيل مطور ذاتياً: يدعم أدوات التطوير، الذاكرة، وفحص الأخطاء مع التبديل بين Gemini و Groq.")
+st.write("وكيل مطور ذاتياً: يدعم أدوات التطوير، الذاكرة، وفحص الأخطاء مع التبديل بين Gemini، Groq، و OpenAI.")
 
-# قراءة المفاتيح أو إدخالها يوماً بيوم من الشاشة
+# قراءة المفاتيح من متغيرات البيئة أو الـ Secrets
 gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
 groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
 
 if not gemini_key:
     try:
@@ -26,18 +28,23 @@ if not groq_key:
     except Exception:
         pass
 
+if not openai_key:
+    try:
+        openai_key = st.secrets.get("OPENAI_API_KEY", "")
+    except Exception:
+        pass
+
 with st.sidebar:
     st.header("🔑 إعدادات المزود والمفاتيح")
-    provider = st.radio("اختر نموذج الذكاء الاصطناعي:", ["Groq (Llama 3)", "Gemini (Google)"])
+    provider = st.radio("اختر نموذج الذكاء الاصطناعي:", ["Groq (Llama 3)", "OpenAI (GPT-4o)", "Gemini (Google)"])
     
     st.markdown("---")
-    # إمكانية إدخال المفاتيح يدوياً من الشاشة إذا لم تكن مخزنة
-    if provider == "Groq (Llama 3)":
-        if not groq_key:
-            groq_key = st.text_input("أدخل مفتاح Groq API Key:", type="password")
-    else:
-        if not gemini_key:
-            gemini_key = st.text_input("أدخل مفتاح Gemini API Key:", type="password")
+    if provider == "Groq (Llama 3)" and not groq_key:
+        groq_key = st.text_input("أدخل مفتاح Groq API Key:", type="password")
+    elif provider == "OpenAI (GPT-4o)" and not openai_key:
+        openai_key = st.text_input("أدخل مفتاح OpenAI API Key:", type="password")
+    elif provider == "Gemini (Google)" and not gemini_key:
+        gemini_key = st.text_input("أدخل مفتاح Gemini API Key:", type="password")
 
 agent_tools = [
     tools.web_search,
@@ -70,7 +77,7 @@ if prompt:
         try:
             if provider == "Gemini (Google)":
                 if not gemini_key:
-                    raise ValueError("مفتاح Gemini غير متوفر. يرجى إدخاله في الشريط الجانبي.")
+                    raise ValueError("مفتاح Gemini غير متوفر.")
                 
                 client = genai.Client(api_key=gemini_key)
                 response = client.models.generate_content(
@@ -90,22 +97,32 @@ if prompt:
                 )
                 reply_text = response.text if response.text else "تم تنفيذ مهام التطوير بنجاح."
                 
-            else:
+            elif provider == "Groq (Llama 3)":
                 if not groq_key:
-                    raise ValueError("مفتاح Groq غير متوفر. يرجى إدخاله في الشريط الجانبي.")
+                    raise ValueError("مفتاح Groq غير متوفر.")
                 
                 client = Groq(api_key=groq_key)
                 completion = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",  # تم تحديث النموذج لتجنب خطأ 404
+                    model="llama-3.1-8b-instant",
                     messages=[
-                        {
-                            "role": "system",
-                            "content": "أنت مساعد ومطور ذكي ومستقل لمشروع برمجيات بايثون."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
+                        {"role": "system", "content": "أنت مساعد ومطور ذكي ومستقل لمشروع برمجيات بايثون."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2048,
+                )
+                reply_text = completion.choices[0].message.content
+
+            else:  # OpenAI
+                if not openai_key:
+                    raise ValueError("مفتاح OpenAI غير متوفر.")
+                
+                client = OpenAI(api_key=openai_key)
+                completion = client.chat.completions.create(
+                    model="gpt-4o-mini",  # نموذج سريع واقتصادي وعالي الكفاءة
+                    messages=[
+                        {"role": "system", "content": "أنت مساعد ومطور ذكي ومستقل لمشروع برمجيات بايثون."},
+                        {"role": "user", "content": prompt}
                     ],
                     temperature=0.7,
                     max_tokens=2048,
