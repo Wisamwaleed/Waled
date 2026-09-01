@@ -1,15 +1,26 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from groq import Groq
 import tools
 
-load_dotenv()
-
+# قراءة المفاتيح مباشرة من البيئة أو الـ Secrets بدون الحاجة لـ dotenv
 gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
 groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+
+# دعم Streamlit Secrets إذا كان التطبيق مرفوعاً على السحابة
+if not gemini_key:
+    try:
+        gemini_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+
+if not groq_key:
+    try:
+        groq_key = st.secrets["GROQ_API_KEY"]
+    except Exception:
+        pass
 
 st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
 
@@ -50,6 +61,9 @@ if prompt:
 
         try:
             if provider == "Gemini (Google)":
+                if not gemini_key:
+                    raise ValueError("مفتاح Gemini غير متوفر. يرجى إعداده.")
+                
                 client = genai.Client(api_key=gemini_key)
                 response = client.models.generate_content(
                     model='gemini-3.6-flash',
@@ -69,6 +83,9 @@ if prompt:
                 reply_text = response.text if response.text else "تم تنفيذ مهام التطوير بنجاح."
                 
             else:
+                if not groq_key:
+                    raise ValueError("مفتاح Groq غير متوفر. يرجى إعداده.")
+                
                 client = Groq(api_key=groq_key)
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
