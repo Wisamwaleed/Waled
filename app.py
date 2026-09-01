@@ -11,10 +11,10 @@ if not api_key:
     except Exception:
         pass
 
-st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
+st.set_page_config(page_title="Waled Self-Evolving Developer", page_icon="🤖")
 
-st.title("🤖 Waled Autonomous Agent (ReAct Loop)")
-st.write("وكيل ذكي حقيقي قادر على تنفيذ سلاسل مهام متعددة الخطوات تلقائياً.")
+st.title("🤖 Waled Self-Evolving Developer Agent")
+st.write("وكيل مطور ذاتياً: يستعرض، يكتب، يفحص الأخطاء البرمجية ويصلحها بذكاء.")
 
 if not api_key:
     st.error("الرجاء إعداد مفتاح GEMINI_API_KEY في إعدادات المنصة.")
@@ -29,7 +29,8 @@ agent_tools = [
     tools.query_memory,
     tools.read_project_file,
     tools.write_project_file,
-    tools.list_files
+    tools.list_files,
+    tools.check_code_syntax
 ]
 
 if "messages" not in st.session_state:
@@ -39,7 +40,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-prompt = st.chat_input("اطرح طلباً معقداً يتطلب خطوات متعددة (مثلاً: استعرض الملفات، اقرأ ملف معين، واقترح تعديلات)...")
+prompt = st.chat_input("اطلب من المطور الذاتي تطوير ملف أو فحص الأخطاء...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -47,10 +48,9 @@ if prompt:
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        message_placeholder.markdown("جاري تشغيل حلقة التفكير والتنفيذ المستقلة (ReAct)...")
+        message_placeholder.markdown("جاري معالجة طلب التطوير الذاتي...")
 
         try:
-            # تفعيل الاستدعاء التلقائي المتعدد للأدوات (Automatic Function Calling)
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=prompt,
@@ -58,20 +58,19 @@ if prompt:
                     tools=agent_tools,
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=False,
-                        maximum_remote_calls=5  # السماح للوكيل بما يصل إلى 5 خطوات متتالية لحل المشكلة
+                        maximum_remote_calls=3  # حد آمن واقتصادي لا يستهلك حصة الطلبات اليومية
                     ),
                     system_instruction=(
-                        "أنت وكيل ذكي ومستقل (Autonomous Developer Agent). "
-                        "تمتلك القدرة على قراءة ملفات المشروع، تعديلها، كتابة أكواد واختبارها، والبحث في الويب والذاكرة. "
-                        "عندما يطلب منك المستخدم مهمة، قم بتفكيكها إلى خطوات واستخدم الأدوات بشكل متتابع (أداة تلو الأخرى) "
-                        "حتى تصل إلى النتيجة النهائية وتنجز المهمة بالكامل قبل الرد النهائي على المستخدم."
+                        "أنت وكيل ومطور برمجيات ذاتي التطور (Self-Evolving Developer Agent). "
+                        "تمتلك أدوات لقراءة ملفات المشروع، تعديلها، اختبارها، وفحص أخطائها عبر (check_code_syntax). "
+                        "عندما يطلب منك المستخدم تطوير ميزة أو فحص ملف، استخدم هذه الأدوات بحكمة واقتصاد."
                     )
                 )
             )
             
-            reply_text = response.text if response.text else "تم إتمام المهمة بنجاح عبر حلقة التنفيذ."
+            reply_text = response.text if response.text else "تم تنفيذ مهام التطوير بنجاح."
             message_placeholder.markdown(reply_text)
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
             
         except Exception as e:
-            message_placeholder.markdown(f"حدث خطأ أثناء تنفيذ الوكيل: {e}")
+            message_placeholder.markdown(f"حدث خطأ أثناء تشغيل الوكيل: {e}")

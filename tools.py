@@ -5,7 +5,9 @@ import urllib.parse
 from html.parser import HTMLParser
 import memory_manager
 import dev_tools
+import self_debug_tool
 
+# الأدوات الأساسية والأدوات السابقة...
 def web_search(query: str) -> str:
     """البحث في الإنترنت عن معلومات حية."""
     try:
@@ -30,14 +32,14 @@ def web_search(query: str) -> str:
         return f"خطأ في البحث: {e}"
 
 def run_python_code(code: str) -> str:
-    """تنفيذ كود بايثون محلياً وإرجاع النتيجة لاختباره."""
+    """تنفيذ كود بايثون محلياً واختباره."""
     try:
         filename = "temp_exec.py"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(code)
         res = subprocess.run(["python", filename], capture_output=True, text=True, timeout=10)
         output = res.stdout if res.returncode == 0 else res.stderr
-        return output if output else "تم تنفيذ الكود بنجاح دون مخرجات."
+        return output if output else "تم التنفيذ بنجاح دون مخرجات."
     except Exception as e:
         return f"خطأ أثناء التنفيذ: {e}"
 
@@ -49,7 +51,6 @@ def query_memory(query: str) -> str:
     """البحث في الذاكرة المستقرة عن معلومات سابقة."""
     return memory_manager.search_memory(query)
 
-# أدوات المطور الحقيقي
 def read_project_file(file_path: str) -> str:
     """قراءة ملف برمجي داخل المشروع."""
     return dev_tools.read_file(file_path)
@@ -61,3 +62,8 @@ def write_project_file(file_path: str, content: str) -> str:
 def list_files() -> str:
     """عرض ملفات المشروع الحالية."""
     return dev_tools.list_workspace_files()
+
+# أداة التطوير الذاتي الجديدة
+def check_code_syntax(file_path: str) -> str:
+    """فحص سلامة وصحة الكود البرمجي في أي ملف واكتشاف الأخطاء."""
+    return self_debug_tool.test_and_fix_file(file_path)
