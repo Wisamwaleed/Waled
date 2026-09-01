@@ -96,7 +96,7 @@ if prompt:
                 
                 client = Groq(api_key=groq_key)
                 completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
+                    model="llama-3.1-8b-instant",  # تم تحديث النموذج لتجنب خطأ 404
                     messages=[
                         {
                             "role": "system",
