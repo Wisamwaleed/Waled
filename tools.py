@@ -1,42 +1,74 @@
 import os
+import subprocess
+import json
+import urllib.request
+import urllib.parse
 
-def calculate_math(expression: str) -> str:
-    """أداة لحساب العمليات الحسابية بدقة."""
+def web_search(query: str) -> str:
+    """البحث في الإنترنت عن طريق جلب نتائج بحث بسيطة أو معلومات عامة."""
     try:
-        result = eval(expression)
-        return f"النتيجة الرياضية هي: {result}"
+        # استخدام واجهة بحث عامة أو محاكاة البحث
+        encoded_query = urllib.parse.quote(query)
+        url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req) as response:
+            html_content = response.read().decode('utf-8')
+            # استخراج بعض النصوص المبسطة من نتائج البحث
+            from html.parser import HTMLParser
+            
+            class HTMLFilter(HTMLParser):
+                def __init__(self):
+                    super().__init__()
+                    self.text = []
+                def handle_data(self, data):
+                    self.text.append(data)
+            
+            parser = HTMLFilter()
+            parser.feed(html_content)
+            results = " ".join([t.strip() for t in parser.text if t.strip()])
+            return results[:2000] if results500 else "لم يتم العثور على نتائج واضحة."
     except Exception as e:
-        return f"حدث خطأ في الحساب: {e}"
+        return f"خطأ في البحث: {e}"
 
-def read_local_file(file_path: str) -> str:
-    """أداة لقراءة محتوى أي ملف نصي على الحاسوب."""
+def run_python_code(code: str) -> str:
+    """تنفيذ كود بايثون محلياً وإرجاع النتيجة أو الأخطاء لتصحيحها ذاتياً."""
     try:
-        if not os.path.exists(file_path):
-            return "الملف غير موجود."
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+        # كتابة الكود في ملف مؤقت وتنفيذه
+        filename = "temp_exec.py"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(code)
+        
+        result = subprocess.run(
+            ["python", filename], 
+            capture_output=True, 
+            text=True, 
+            timeout=10
+        )
+        
+        output = result.stdout if result.returncode == 0 else result.stderr
+        return output if output else "تم تنفيذ الكود بنجاح دون مخرجات نصية."
     except Exception as e:
-        return f"فشل قراءة الملف: {e}"
+        return fعبارة عن خطأ أثناء التنفيذ: {e}"
 
-agent_tools = {
-    "calculate_math": calculate_math,
-    "read_local_file": read_local_file
-}
+def save_memory(memory_text: str) -> str:
+    """حفظ التجارب أو الدروس المستفادة في ملف ذاكرة خاص ليتطور الوكيل ذاتياً."""
+    try:
+        os.makedirs("memory", exist_ok=True)
+        with open("memory/learned_lessons.txt", "a", encoding="utf-8") as f:
+            f.write(f"- {memory_text}\n")
+        return "تم حفظ التعلم بنجاح في الذاكرة الدائمة."
+    except Exception as e:
+        return f"خطأ في حفظ الذاكرة: {e}"
 
-def reverse_text(text: str) -> str:
-    """
-    عكس النص المدخل.
-    """
-    return text[::-1]
-
-
-
-def reverse_text(text: str) -> str:
-    """
-    Reverses the given input text.
-
-    :param text: The text to be reversed.
-    :return: The reversed text string.
-    """
-    return text[::-1]
-
+def read_memory() -> str:
+    """قراءة الذاكرة والتجارب السابقة للرجوع إليها عند الحاجة."""
+    try:
+        if os.path.exists("memory/learned_lessons.txt"):
+            with open("memory/learned_lessons.txt", "r", encoding="utf-8") as f:
+                return f.read()
+        return "الذاكرة فارغة حتى الآن."
+    except Exception as e:
+        return f"خطأ في قراءة الذاكرة: {e}"
