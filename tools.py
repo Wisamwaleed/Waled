@@ -1,42 +1,26 @@
 import os
 import subprocess
-import json
 import urllib.request
 import urllib.parse
 
 def web_search(query: str) -> str:
-    """البحث في الإنترنت عن طريق جلب نتائج بحث بسيطة أو معلومات عامة."""
+    """البحث في الإنترنت باستخدام DuckDuckGo."""
     try:
-        # استخدام واجهة بحث عامة أو محاكاة البحث
         encoded_query = urllib.parse.quote(query)
         url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
         req = urllib.request.Request(
             url, 
-            headers={'User-Agent': 'Mozilla/5.0'}
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         )
         with urllib.request.urlopen(req) as response:
-            html_content = response.read().decode('utf-8')
-            # استخراج بعض النصوص المبسطة من نتائج البحث
-            from html.parser import HTMLParser
-            
-            class HTMLFilter(HTMLParser):
-                def __init__(self):
-                    super().__init__()
-                    self.text = []
-                def handle_data(self, data):
-                    self.text.append(data)
-            
-            parser = HTMLFilter()
-            parser.feed(html_content)
-            results = " ".join([t.strip() for t in parser.text if t.strip()])
-            return results[:2000] if results500 else "لم يتم العثور على نتائج واضحة."
+            html = response.read().decode('utf-8')
+            return html[:1500] if html else "لم يتم العثور على نتائج."
     except Exception as e:
-        return f"خطأ في البحث: {e}"
+        return f"حدث خطأ أثناء البحث: {str(e)}"
 
 def run_python_code(code: str) -> str:
-    """تنفيذ كود بايثون محلياً وإرجاع النتيجة أو الأخطاء لتصحيحها ذاتياً."""
+    """تنفيذ كود بايثون محلياً وإرجاع النتيجة."""
     try:
-        # كتابة الكود في ملف مؤقت وتنفيذه
         filename = "temp_exec.py"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(code)
@@ -49,26 +33,28 @@ def run_python_code(code: str) -> str:
         )
         
         output = result.stdout if result.returncode == 0 else result.stderr
-        return output if output else "تم تنفيذ الكود بنجاح دون مخرجات نصية."
+        return output if output else "تم التنفيذ بنجاح دون مخرجات."
     except Exception as e:
-        return fعبارة عن خطأ أثناء التنفيذ: {e}"
+        return f"حدث خطأ أثناء تنفيذ الكود: {str(e)}"
 
 def save_memory(memory_text: str) -> str:
-    """حفظ التجارب أو الدروس المستفادة في ملف ذاكرة خاص ليتطور الوكيل ذاتياً."""
+    """حفظ الدروس والمعلومات في الذاكرة المستمرة."""
     try:
         os.makedirs("memory", exist_ok=True)
-        with open("memory/learned_lessons.txt", "a", encoding="utf-8") as f:
+        file_path = os.path.join("memory", "learned_lessons.txt")
+        with open(file_path, "a", encoding="utf-8") as f:
             f.write(f"- {memory_text}\n")
-        return "تم حفظ التعلم بنجاح في الذاكرة الدائمة."
+        return "تم حفظ المعلومة في الذاكرة بنجاح."
     except Exception as e:
-        return f"خطأ في حفظ الذاكرة: {e}"
+        return f"حدث خطأ أثناء حفظ الذاكرة: {str(e)}"
 
 def read_memory() -> str:
-    """قراءة الذاكرة والتجارب السابقة للرجوع إليها عند الحاجة."""
+    """قراءة محتوى الذاكرة السابقة."""
     try:
-        if os.path.exists("memory/learned_lessons.txt"):
-            with open("memory/learned_lessons.txt", "r", encoding="utf-8") as f:
+        file_path = os.path.join("memory", "learned_lessons.txt")
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
                 return f.read()
-        return "الذاكرة فارغة حتى الآن."
+        return "الذاكرة فارغة حالياً."
     except Exception as e:
-        return f"خطأ في قراءة الذاكرة: {e}"
+        return f"حدث خطأ أثناء قراءة الذاكرة: {str(e)}"
