@@ -5,31 +5,39 @@ from google.genai import types
 from groq import Groq
 import tools
 
-# قراءة المفاتيح مباشرة من البيئة أو الـ Secrets بدون الحاجة لـ dotenv
-gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
-groq_key = os.environ.get("GROQ_API_KEY", "").strip()
-
-# دعم Streamlit Secrets إذا كان التطبيق مرفوعاً على السحابة
-if not gemini_key:
-    try:
-        gemini_key = st.secrets["GEMINI_API_KEY"]
-    except Exception:
-        pass
-
-if not groq_key:
-    try:
-        groq_key = st.secrets["GROQ_API_KEY"]
-    except Exception:
-        pass
-
 st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
 
 st.title("🤖 Waled Self-Evolving Developer Agent")
 st.write("وكيل مطور ذاتياً: يدعم أدوات التطوير، الذاكرة، وفحص الأخطاء مع التبديل بين Gemini و Groq.")
 
+# قراءة المفاتيح أو إدخالها يوماً بيوم من الشاشة
+gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+
+if not gemini_key:
+    try:
+        gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        pass
+
+if not groq_key:
+    try:
+        groq_key = st.secrets.get("GROQ_API_KEY", "")
+    except Exception:
+        pass
+
 with st.sidebar:
-    st.header("🔑 إعدادات المزود")
+    st.header("🔑 إعدادات المزود والمفاتيح")
     provider = st.radio("اختر نموذج الذكاء الاصطناعي:", ["Groq (Llama 3)", "Gemini (Google)"])
+    
+    st.markdown("---")
+    # إمكانية إدخال المفاتيح يدوياً من الشاشة إذا لم تكن مخزنة
+    if provider == "Groq (Llama 3)":
+        if not groq_key:
+            groq_key = st.text_input("أدخل مفتاح Groq API Key:", type="password")
+    else:
+        if not gemini_key:
+            gemini_key = st.text_input("أدخل مفتاح Gemini API Key:", type="password")
 
 agent_tools = [
     tools.web_search,
@@ -62,7 +70,7 @@ if prompt:
         try:
             if provider == "Gemini (Google)":
                 if not gemini_key:
-                    raise ValueError("مفتاح Gemini غير متوفر. يرجى إعداده.")
+                    raise ValueError("مفتاح Gemini غير متوفر. يرجى إدخاله في الشريط الجانبي.")
                 
                 client = genai.Client(api_key=gemini_key)
                 response = client.models.generate_content(
@@ -84,7 +92,7 @@ if prompt:
                 
             else:
                 if not groq_key:
-                    raise ValueError("مفتاح Groq غير متوفر. يرجى إعداده.")
+                    raise ValueError("مفتاح Groq غير متوفر. يرجى إدخاله في الشريط الجانبي.")
                 
                 client = Groq(api_key=groq_key)
                 completion = client.chat.completions.create(
