@@ -13,8 +13,8 @@ if not api_key:
 
 st.set_page_config(page_title="Waled Autonomous Developer", page_icon="🤖")
 
-st.title("🤖 Waled Autonomous Developer Agent")
-st.write("وكيل مطور حقيقي: يمتلك صلاحيات قراءة وتعديل الملفات، البحث، الذاكرة، وتنفيذ الأكواد.")
+st.title("🤖 Waled Autonomous Agent (ReAct Loop)")
+st.write("وكيل ذكي حقيقي قادر على تنفيذ سلاسل مهام متعددة الخطوات تلقائياً.")
 
 if not api_key:
     st.error("الرجاء إعداد مفتاح GEMINI_API_KEY في إعدادات المنصة.")
@@ -39,7 +39,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-prompt = st.chat_input("اطلب من المطور أي مهمة برمجية (مثلاً: استعرض ملفات المشروع أو عدل كذا...)")
+prompt = st.chat_input("اطرح طلباً معقداً يتطلب خطوات متعددة (مثلاً: استعرض الملفات، اقرأ ملف معين، واقترح تعديلات)...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -47,26 +47,31 @@ if prompt:
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        message_placeholder.markdown("جاري تشغيل الوكيل وتطبيق أدوات التطوير...")
+        message_placeholder.markdown("جاري تشغيل حلقة التفكير والتنفيذ المستقلة (ReAct)...")
 
         try:
+            # تفعيل الاستدعاء التلقائي المتعدد للأدوات (Automatic Function Calling)
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     tools=agent_tools,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=False,
+                        maximum_remote_calls=5  # السماح للوكيل بما يصل إلى 5 خطوات متتالية لحل المشكلة
+                    ),
                     system_instruction=(
-                        "أنت مطور ووكيل برمجيات حقيقي ومستقل (Autonomous Developer Agent). "
-                        "تمتلك القدرة الكاملة على قراءة ملفات المشروع، تعديلها، كتابة أكواد جديدة، اختبارها عبر تنفيذها، "
-                        "والبحث في الويب والذاكرة المستقرة. عندما يطلب منك المستخدم تطوير ميزة أو إصلاح خطأ، "
-                        "استخدم أدوات المطور (read_project_file, write_project_file, list_files) للتعامل مع الشيفرة البرمجية مباشرة."
+                        "أنت وكيل ذكي ومستقل (Autonomous Developer Agent). "
+                        "تمتلك القدرة على قراءة ملفات المشروع، تعديلها، كتابة أكواد واختبارها، والبحث في الويب والذاكرة. "
+                        "عندما يطلب منك المستخدم مهمة، قم بتفكيكها إلى خطوات واستخدم الأدوات بشكل متتابع (أداة تلو الأخرى) "
+                        "حتى تصل إلى النتيجة النهائية وتنجز المهمة بالكامل قبل الرد النهائي على المستخدم."
                     )
                 )
             )
             
-            reply_text = response.text if response.text else "تم تنفيذ المهمة البرمجية بنجاح."
+            reply_text = response.text if response.text else "تم إتمام المهمة بنجاح عبر حلقة التنفيذ."
             message_placeholder.markdown(reply_text)
             st.session_state.messages.append({"role": "assistant", "content": reply_text})
             
         except Exception as e:
-            message_placeholder.markdown(f"حدث خطأ أثناء عمل الوكيل: {e}")
+            message_placeholder.markdown(f"حدث خطأ أثناء تنفيذ الوكيل: {e}")
